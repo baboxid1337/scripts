@@ -1,0 +1,126 @@
+#!/bin/bash
+# ============================================
+#  Protect.sh v2 - File Protector & Locker
+#  Author : Baboxid1337
+#  Version: 2.0
+# ============================================
+
+# Lokasi penyimpanan backup file
+BACKUP_DIR="$HOME/.protected_files"
+
+# Warna teks biar lebih keren 😎
+green="\e[92m"
+red="\e[91m"
+yellow="\e[93m"
+blue="\e[94m"
+reset="\e[0m"
+
+# Bikin folder backup kalau belum ada
+mkdir -p "$BACKUP_DIR"
+
+# Fungsi proteksi file
+protect_file() {
+    local FILE="$1"
+    if [[ ! -f "$FILE" ]]; then
+        echo -e "${red}[ERROR]${reset} File tidak ditemukan: $FILE"
+        return
+    fi
+
+    cp "$FILE" "$BACKUP_DIR/"
+    chmod 444 "$FILE"
+    echo -e "${green}[OK]${reset} File berhasil diproteksi: $FILE"
+    echo -e "${blue}Backup:${reset} $BACKUP_DIR/$(basename "$FILE")"
+}
+
+# Fungsi unlock file
+unlock_file() {
+    local FILE="$1"
+    if [[ ! -f "$FILE" ]]; then
+        echo -e "${red}[ERROR]${reset} File tidak ditemukan: $FILE"
+        return
+    fi
+
+    chmod 644 "$FILE"
+    echo -e "${green}[OK]${reset} File berhasil di-unlock: $FILE"
+}
+
+# Fungsi restore file
+restore_file() {
+    local FILE="$1"
+    local BACKUP_FILE="$BACKUP_DIR/$(basename "$FILE")"
+
+    if [[ ! -f "$BACKUP_FILE" ]]; then
+        echo -e "${red}[ERROR]${reset} Tidak ada backup untuk file: $FILE"
+        return
+    fi
+
+    cp "$BACKUP_FILE" "$FILE"
+    chmod 644 "$FILE"
+    echo -e "${green}[OK]${reset} File berhasil direstore: $FILE"
+}
+
+# Fungsi proteksi folder
+protect_folder() {
+    local FOLDER="$1"
+    if [[ ! -d "$FOLDER" ]]; then
+        echo -e "${red}[ERROR]${reset} Folder tidak ditemukan: $FOLDER"
+        return
+    fi
+
+    find "$FOLDER" -type f -name "*.php" | while read -r FILE; do
+        protect_file "$FILE"
+    done
+    echo -e "${green}[OK]${reset} Semua file PHP di folder $FOLDER berhasil diproteksi."
+}
+
+# Fungsi list file yang diproteksi
+list_protected() {
+    echo -e "${yellow}[INFO]${reset} Daftar file yang sudah dibackup:"
+    ls -l "$BACKUP_DIR"
+}
+
+# Menu interaktif
+while true; do
+    echo -e "\n${blue}=== Protect.sh v2 - Baboxid1337 ===${reset}"
+    echo "1. Proteksi file"
+    echo "2. Unlock file"
+    echo "3. Proteksi folder"
+    echo "4. Restore file dari backup"
+    echo "5. List file yang diproteksi"
+    echo "6. Keluar"
+    echo -ne "${yellow}Pilih menu:${reset} "
+    read -r choice
+
+    case $choice in
+        1)
+            echo -ne "Masukkan path file: "
+            read -r FILE
+            protect_file "$FILE"
+            ;;
+        2)
+            echo -ne "Masukkan path file: "
+            read -r FILE
+            unlock_file "$FILE"
+            ;;
+        3)
+            echo -ne "Masukkan path folder: "
+            read -r FOLDER
+            protect_folder "$FOLDER"
+            ;;
+        4)
+            echo -ne "Masukkan path file: "
+            read -r FILE
+            restore_file "$FILE"
+            ;;
+        5)
+            list_protected
+            ;;
+        6)
+            echo -e "${green}Bye bro 😎${reset}"
+            exit 0
+            ;;
+        *)
+            echo -e "${red}[ERROR]${reset} Pilihan tidak valid!"
+            ;;
+    esac
+done
